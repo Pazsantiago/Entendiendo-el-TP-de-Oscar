@@ -1,0 +1,5 @@
+
+leer(x);
+y := x + 1;
+escribir(y);
+fin
