@@ -38,12 +38,15 @@ typedef enum // Un tipo enum que se le agrega el alias "Token", para eso sirve e
 
 // FDT = Fin de texto = \0 o $.
  
-typedef struct
+typedef struct 
 {
    char identifi[TAMLEX];
    TOKEN t; /* t=0, 1, 2, 3 Palabra Reservada, t=ID=4 Identificador */
 } RegTS;
-
+// Chat: Representa la tabla de simbolos, contiene info sobre 
+// identificadores como su nombre tipo y posicion en programa.
+// sirve para análisis semantico y generación de código.
+ 
 RegTS TS[1000] = {{"inicio", INICIO}, {"fin", FIN}, {"leer", LEER}, {"escribir", ESCRIBIR}, {"$", ID}};
 
 typedef struct
@@ -52,6 +55,7 @@ typedef struct
    char nombre[TAMLEX];
    int valor;
 } REG_EXPRESION;
+// Chat: Representa una expresión regular para el análisis léxico.
 
 char buffer[TAMLEX]; //Cada instrucción en micro tiene un espacio total de 32 bits + fin de linea. Aca se "acumulan" todas las instrucciones.
 
@@ -95,7 +99,9 @@ void Terminar(void);
 void Asignar(REG_EXPRESION izq, REG_EXPRESION der);
 
 /***************************Programa Principal************************/
-
+   // Verifica la cantidad de argumentos y la extensión del archivo fuente
+   // Abre el archivo fuente y llama a la función de compilación
+   // Cierra el archivo al terminar
 int main(int argc, char *argv[])
 {
    TOKEN tok;
@@ -170,7 +176,8 @@ void Programa(void)
 void ListaSentencias(void)
 {
    /* <listaSentencias> -> <sentencia> {<sentencia>} */
-
+   // Chat: Procesa un conjunto de sentencias y se asegura que esten
+   // correctamente formateadas y estructuradas según la gramática
    Sentencia();
 
    while (1)
@@ -190,6 +197,8 @@ void ListaSentencias(void)
 
 void Sentencia(void)
 {
+   // Chat: Analiza una sentencia, dependiendo de cual sea, llama otras funciones 
+   // oara oricesar partes de esa sentencia
    TOKEN tok = ProximoToken();
    REG_EXPRESION izq, der;
 
@@ -224,7 +233,7 @@ void Sentencia(void)
 void ListaIdentificadores(void)
 {
    /* <listaIdentificadores> -> <identificador> #leer_id {COMA <identificador> #leer_id} */
-
+   // Chat: Procesa una lista de identificadores
    TOKEN t;
    REG_EXPRESION reg;
 
@@ -242,7 +251,8 @@ void ListaIdentificadores(void)
 void Identificador(REG_EXPRESION *presul)
 {
    /* <identificador> -> ID #procesar_id */
-
+   // Chat: Procesa un identificador para verificar si es correcta 
+   // y registra su uso en la tabla de simbolos
    Match(ID);
    *presul = ProcesarId();
 }
@@ -250,7 +260,7 @@ void Identificador(REG_EXPRESION *presul)
 void ListaExpresiones(void)
 {
    /* <listaExpresiones> -> <expresion> #escribir_exp {COMA <expresion> #escribir_exp} */
-
+   // Chat: Procesa expresiones y se asegura que sean validas.
    TOKEN t;
    REG_EXPRESION reg;
 
@@ -268,7 +278,7 @@ void ListaExpresiones(void)
 void Expresion(REG_EXPRESION *presul)
 {
    /* <expresion> -> <primaria> { <operadorAditivo> <primaria> #gen_infijo } */
-
+   // Chat: Analiza una expresión, dependiende de que "operación" sea la procesa segun reglas gramaticales y aritmeticas
    REG_EXPRESION operandoIzq, operandoDer;
    char op[TAMLEX];
    TOKEN t;
@@ -286,8 +296,8 @@ void Expresion(REG_EXPRESION *presul)
 
 void Primaria(REG_EXPRESION *presul)
 {
+   // Chat: Procesa y maneja las partes mas basicas de una expresion
    TOKEN tok = ProximoToken();
-
    switch (tok)
    {
    case ID: /* <primaria> -> <identificador> */
@@ -310,7 +320,7 @@ void Primaria(REG_EXPRESION *presul)
 void OperadorAditivo(char *presul)
 {
    /* <operadorAditivo> -> SUMA #procesar_op | RESTA #procesar_op */
-
+   // Chat: Identifica y maneja los operadores aritmeticos de la expresión
    TOKEN t = ProximoToken();
 
    if (t == SUMA || t == RESTA)
@@ -327,7 +337,7 @@ void OperadorAditivo(char *presul)
 REG_EXPRESION ProcesarCte(void)
 {
    /* Convierte cadena que representa numero a numero entero y construye un registro semantico */
-
+   // Chat: Es decir, registra el valor y tipo de constante para el analisis semantico
    REG_EXPRESION reg;
 
    reg.clase = CONSTANTE;
@@ -340,7 +350,7 @@ REG_EXPRESION ProcesarCte(void)
 REG_EXPRESION ProcesarId(void)
 {
    /* Declara ID y construye el correspondiente registro semantico */
-
+   // Chat: Es decir, procesa, registra y valida identificadores
    REG_EXPRESION reg;
 
    Chequear(buffer);
@@ -353,28 +363,29 @@ REG_EXPRESION ProcesarId(void)
 char *ProcesarOp(void)
 {
    /* Declara OP y construye el correspondiente registro semantico */
-
+   // Chat: Procesa los operadores en la expresiones del fuente (.txt).
    return buffer;
 }
 
 void Leer(REG_EXPRESION in)
 {
    /* Genera la instruccion para leer */
-
+   // Arma el formato del texto a mostrar por pantalla 
    Generar("Read", in.nombre, "Entera", "");
 }
 
 void Escribir(REG_EXPRESION out)
 {
    /* Genera la instruccion para escribir */
-
+   // Arma el formato del texto a mostrar por pantalla (otro caso)
    Generar("Write", Extraer(&out), "Entera", "");
 }
 
 REG_EXPRESION GenInfijo(REG_EXPRESION e1, char *op, REG_EXPRESION e2)
 {
    /* Genera la instruccion para una operacion infija y construye un registro semantico con el resultado */
-
+   // Chat: Genera código para operaciones infijas (como a + b, donde el simbolo esta entre los operadores)
+   // Esto lo hace produciendo instrucciones intermedias para operaciones de este tipo
    REG_EXPRESION reg;
    static unsigned int numTemp = 1;
    char cadTemp[TAMLEX] = "Temp&";
@@ -441,21 +452,23 @@ void ErrorSintactico()
 void Generar(char *co, char *a, char *b, char *c)
 {
    /* Produce la salida de la instruccion para la MV por stdout */
-
+   // Genera el texto a mostrar pantalla por medio de los parametros enviados
+   // esto lo hace formateando los valores con el formato del printf.
+   
+   // Basicamente arma el texto asi (sin exagerar es este formato): Valor1 Valor2,Valor3,Valor4. 
    printf("%s %s%c%s%c%s\n", co, a, ',', b, ',', c);
 }
 
 char *Extraer(REG_EXPRESION *preg)
 {
    /* Retorna la cadena del registro semantico */
-
    return preg->nombre;
 }
 
 int Buscar(char *id, RegTS *TS, TOKEN *t)
 {
    /* Determina si un identificador esta en la TS */
-
+   // TS = Tabla de simbolos
    int i = 0;
 
    while (strcmp("$", TS[i].identifi))
